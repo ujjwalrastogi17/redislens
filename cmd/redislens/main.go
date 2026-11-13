@@ -6,12 +6,24 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 )
 
 // version is overridden at build time:
 //
 //	go build -ldflags "-X main.version=v0.1.0" ./cmd/redislens
 var version = "dev"
+
+// init fills in the version for `go install ...@v0.1.0` builds, which don't
+// pass -ldflags but do record the module version in the binary.
+func init() {
+	if version != "dev" {
+		return
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		version = info.Main.Version
+	}
+}
 
 func main() {
 	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
